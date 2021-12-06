@@ -1,0 +1,199 @@
+<html lang="en">
+<head>
+    <title>Animation</title>
+    <style>
+        html, body {
+            width: 100%;
+            height: 100%;
+            background-color: #e5e8b6;
+        }
+
+        #canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        .endpoint {
+            fill: #7d869c;
+            opacity: 0;
+        }
+
+        .intersection {
+            fill: #586994;
+        }
+    </style>
+
+</head>
+<body>
+<svg id="canvas" viewBox="0 0 1000 1000"
+     preserveAspectRatio="xMinYMax meet"
+     xmlns="http://www.w3.org/2000/svg">
+</svg>
+<script>
+    function handleOutput(output) {
+        const bounds = getBounds(output.lines)
+        handleLines(output.lines)
+
+        const intersections = Object.values(output.intersections)
+
+        intersections.filter(intersection => intersection.count > 1).forEach(intersection => {
+            drawCircle(intersection.point, bounds, ["intersection"])
+        })
+    }
+
+    function handleLines(lines) {
+        console.log(lines)
+        const bounds = getBounds(lines)
+        console.log('bounds', bounds)
+
+        lines = lines.map(line => sortLine(line))
+
+        lines.forEach(line => {
+            drawCircle(line.start, bounds, ['endpoint'])
+            drawCircle(line.end, bounds, ['endpoint'])
+            connect(line)
+        })
+
+        // intersections(lines, bounds)
+    }
+
+    function sortLine(line) {
+        const newLine = {...line}
+
+        if (newLine.start.x > newLine.end.x) {
+            newLine.start, newLine.end = line.end, line.start
+        }
+
+        return newLine
+    }
+
+    function intersections(lines, bounds) {
+        const o = {}
+
+        lines.forEach(line => {
+            lines.forEach(other => {
+                if (line.start.x === other.start.x
+                    && line.start.y === other.start.y
+                    && line.end.x === other.end.x
+                    && line.end.y === other.end.y
+                )   {
+                    return
+                }
+                try {
+                    const newPoint = calculateIntersection(line.start, line.end, other.start, other.end)
+                    const key = JSON.stringify(newPoint)
+                    if (!o[key]) {
+                        o[key] = 0
+                    }
+                    o[key] += 1
+                } catch(_) {}
+            })
+        })
+
+        Object.keys(o).forEach(str =>  {
+            const point = JSON.parse(str)
+            drawCircle(point, bounds, ['intersection'])
+        })
+
+        console.log('o', o)
+    }
+
+    function getBounds(lines) {
+        let x = 0
+        let y = 0
+
+        lines.forEach(line => {
+            if (line.start.x > x) {
+                x = line.start.x
+            }
+            if (line.start.y > x) {
+                x = line.start.x
+            }
+            if (line.start.y > y) {
+                y = line.start.y
+            }
+            if (line.start.y > y) {
+                y = line.start.y
+            }
+        })
+
+        return {x, y}
+    }
+
+    function drawCircle(point, bounds, classes) {
+        const canvas = document.getElementById('canvas')
+        const box = canvas.viewBox.baseVal
+
+        const cellWidth = box.width / bounds.x
+        const cellHeight = box.height / bounds.y
+        const x = (point.x + 1) * cellWidth
+        const y = (point.y + 1) * cellHeight
+
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle')
+        circle.setAttributeNS(null, 'cx', `${x - cellWidth/2}`)
+        circle.setAttributeNS(null, 'cy', `${y - cellHeight/2}`)
+        circle.setAttributeNS(null, 'r', `2`)
+        circle.setAttribute('id', pointName(point))
+
+        if (classes) {
+            classes.forEach(className => circle.classList.add(className))
+        }
+        canvas.appendChild(circle)
+    }
+
+    function pointName(point) {
+        return `point-${point.x}-${point.y}`
+    }
+
+    function connect(line) {
+        const canvas = document.getElementById('canvas')
+
+        const start = document.getElementById(pointName(line.start))
+        const end = document.getElementById(pointName(line.end))
+
+        const element = document.createElementNS('http://www.w3.org/2000/svg', 'line')
+        element.setAttributeNS(null, 'stroke', `#b4c4ae`)
+        element.setAttributeNS(null, 'x1', start.getAttribute('cx'))
+        element.setAttributeNS(null, 'y1', start.getAttribute('cy'))
+        element.setAttributeNS(null, 'x2', end.getAttribute('cx'))
+        element.setAttributeNS(null, 'y2', end.getAttribute('cy'))
+
+        canvas.appendChild(element)
+    }
+
+    function calculateIntersection(p1, p2, p3, p4) {
+
+        // down part of intersection point formula
+        const d1 = (p1.x - p2.x) * (p3.y - p4.y); // (x1 - x2) * (y3 - y4)
+        const d2 = (p1.y - p2.y) * (p3.x - p4.x); // (y1 - y2) * (x3 - x4)
+        const d = (d1) - (d2);
+
+        if(d === 0) {
+            throw new Error('Number of intersection points is zero or infinity.');
+        }
+
+        // upper part of intersection point formula
+        const u1 = (p1.x * p2.y - p1.y * p2.x); // (x1 * y2 - y1 * x2)
+        const u4 = (p3.x * p4.y - p3.y * p4.x); // (x3 * y4 - y3 * x4)
+
+        const u2x = p3.x - p4.x; // (x3 - x4)
+        const u3x = p1.x - p2.x; // (x1 - x2)
+        const u2y = p3.y - p4.y; // (y3 - y4)
+        const u3y = p1.y - p2.y; // (y1 - y2)
+
+        // intersection point formula
+
+        const px = (u1 * u2x - u3x * u4) / d;
+        const py = (u1 * u2y - u3y * u4) / d;
+
+        return {x: px, y: py};
+    }
+
+    window.addEventListener('load', () => {
+        fetch("output.json")
+            .then(response => response.json())
+            .then(json => handleOutput(json))
+    })
+</script>
+</body>
+</html>
