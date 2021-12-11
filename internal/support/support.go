@@ -37,9 +37,19 @@ func ParseInt(in string) int {
 	return out
 }
 
+func ParseStringList(in string) []int {
+	var out []int
+
+	for _, s := range strings.Split(in, ",") {
+		out = append(out, ParseInt(s))
+	}
+
+	return out
+}
+
 func SetupInput(run func([]string) error) {
 	var input string
-	flag.StringVar(&input, "input", "input.txt", "input")
+	flag.StringVar(&input, "input", "sample.txt", "input")
 	flag.Parse()
 
 	data, err := ReadData(input)
