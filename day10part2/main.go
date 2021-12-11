@@ -2,10 +2,10 @@ package main
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/bryan/adventofcode2021/internal/support"
-	"github.com/davecgh/go-spew/spew"
 )
 
 func main() {
@@ -13,51 +13,20 @@ func main() {
 }
 
 func run(rows []string) error {
-	score := 0
+	var scores []int
 
 	for _, row := range rows {
-		_, ok := parse(row)
-		if ok {
-			fmt.Println(row)
+		a := parse(row)
+		if a != nil {
+			scores = append(scores, score(a))
 		}
 	}
 
-	fmt.Println(score)
+	sort.Ints(scores)
+	index := len(scores) / 2
+	fmt.Println(index, scores[index])
 
 	return nil
-}
-
-var tagValue = map[string]int{
-	")": 3,
-	"]": 57,
-	"}": 1197,
-	">": 25137,
-}
-
-func parse(row string) ([]string, bool) {
-	var a []string
-
-	//
-
-	for _, c := range strings.Split(row, "") {
-		tag, ok := tags[c]
-		if ok {
-			a = append(a, tag)
-		} else if isClose(c) {
-			cur := a[len(a)-1]
-			if cur != c {
-				fmt.Println("hello", c, a)
-				return nil, false
-			} else {
-			}
-		}
-	}
-
-	fmt.Println(a)
-
-	spew.Dump(a)
-
-	return a, true
 }
 
 var tags = map[string]string{
@@ -67,12 +36,37 @@ var tags = map[string]string{
 	"<": ">",
 }
 
-func isOpen(in string) bool {
-	_, ok := tags[in]
-	return ok
+func parse(row string) []string {
+	var a []string
+
+	corrupted := false
+
+	for _, c := range strings.Split(row, "") {
+		tag, ok := tags[c]
+		if ok {
+			a = append(a, tag)
+		} else if isCloseToken(c) {
+			var cur string
+			cur, a = a[len(a)-1], a[:len(a)-1]
+			if cur != c {
+				corrupted = true
+				break
+			}
+		}
+	}
+
+	if !corrupted {
+		for i, j := 0, len(a)-1; i < j; i, j = i+1, j-1 {
+			a[i], a[j] = a[j], a[i]
+		}
+
+		return a
+	}
+
+	return nil
 }
 
-func isClose(in string) bool {
+func isCloseToken(in string) bool {
 	for _, v := range tags {
 		if in == v {
 			return true
@@ -80,4 +74,22 @@ func isClose(in string) bool {
 	}
 
 	return false
+}
+
+var tagValue = map[string]int{
+	")": 1,
+	"]": 2,
+	"}": 3,
+	">": 4,
+}
+
+func score(sl []string) int {
+	sum := 0
+
+	for _, s := range sl {
+		sum = sum*5 + tagValue[s]
+
+	}
+
+	return sum
 }
