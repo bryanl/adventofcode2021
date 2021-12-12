@@ -47,7 +47,7 @@ func ParseStringList(in string) []int {
 	return out
 }
 
-func SetupInput(run func([]string) error) {
+func SetupInput(run func(input []string) error) {
 	var input string
 	flag.StringVar(&input, "input", "sample.txt", "input")
 	flag.Parse()
