@@ -7,6 +7,9 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func ReadData(name string) ([]string, error) {
@@ -60,4 +63,33 @@ func SetupInput(run func(input []string) error) {
 	if err := run(data); err != nil {
 		log.Fatalf("failed: %v", err)
 	}
+}
+
+func ReadFromDisk(t *testing.T, filename string) []string {
+	data, err := ReadData(filename)
+	require.NoError(t, err)
+
+	return data
+}
+
+func ContainsString(s string, sl []string) bool {
+	for i := range sl {
+		if sl[i] == s {
+			return true
+		}
+	}
+
+	return false
+}
+
+func CountString(s string, sl []string) int {
+	sum := 0
+
+	for i := range sl {
+		if s == sl[i] {
+			sum += 1
+		}
+	}
+
+	return sum
 }
