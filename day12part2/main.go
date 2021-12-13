@@ -15,13 +15,27 @@ func main() {
 func run(input []string) error {
 	al := parse(input)
 
-	paths := visit(al, []string{"start"})
-	fmt.Println(len(paths))
+	fmt.Println(visit2(al, []string{"start"}))
 
 	return nil
 }
 
 var previousLookup = map[string][][]string{}
+
+func visit2(al adjacencyList, previous []string) int {
+	sum := 0
+
+	for _, next := range Available(al, previous) {
+		if next == "end" {
+			sum += 1
+			continue
+		}
+
+		sum += visit2(al, append(previous, next))
+	}
+
+	return sum
+}
 
 func visit(al adjacencyList, previous []string) [][]string {
 	key := strings.Join(previous, ",")
@@ -48,14 +62,7 @@ func visit(al adjacencyList, previous []string) [][]string {
 	return paths
 }
 
-var availableLookup = map[string][]string{}
-
 func Available(al adjacencyList, base []string) []string {
-	key := strings.Join(base, ",")
-	if sl, ok := availableLookup[key]; ok {
-		return sl
-	}
-
 	var sl []string
 
 	for _, name := range al[base[len(base)-1]] {
@@ -78,18 +85,10 @@ func Available(al adjacencyList, base []string) []string {
 		}
 	}
 
-	availableLookup[key] = sl
 	return sl
 }
 
-var maxedLookup = map[string]string{}
-
 func MaxedCave(base []string) (string, bool) {
-	key := strings.Join(base, ",")
-	if s, ok := maxedLookup[key]; ok {
-		return s, true
-	}
-
 	m := map[string]int{}
 
 	for _, name := range base {
@@ -99,7 +98,6 @@ func MaxedCave(base []string) (string, bool) {
 
 		m[name] += 1
 		if m[name] == 2 {
-			maxedLookup[key] = name
 			return name, true
 		}
 	}
@@ -107,15 +105,8 @@ func MaxedCave(base []string) (string, bool) {
 	return "", false
 }
 
-var lowerMap = map[string]bool{}
-
 func isLower(s string) bool {
-	if tf, ok := lowerMap[s]; ok {
-		return tf
-	}
-
-	lowerMap[s] = unicode.IsLower(rune(s[0]))
-	return lowerMap[s]
+	return unicode.IsLower(rune(s[0]))
 }
 
 type adjacencyList map[string][]string
