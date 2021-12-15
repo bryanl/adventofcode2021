@@ -50,7 +50,7 @@ func ParseStringList(in string) []int {
 	return out
 }
 
-func SetupInput(run func(input []string) error) {
+func SetupInput(run func(rows []string) error) {
 	var input string
 	flag.StringVar(&input, "input", "sample.txt", "input")
 	flag.Parse()
@@ -92,4 +92,26 @@ func CountString(s string, sl []string) int {
 	}
 
 	return sum
+}
+
+func MaxInt(sl []int) int {
+	max := 0
+	for i := range sl {
+		if sl[i] > max {
+			max = sl[i]
+		}
+	}
+
+	return max
+}
+
+func MinInt(sl []int) int {
+	min := int(^uint(0) >> 1)
+	for i := range sl {
+		if sl[i] < min {
+			min = sl[i]
+		}
+	}
+
+	return min
 }
