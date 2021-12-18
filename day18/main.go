@@ -18,67 +18,107 @@ type Pair interface {
 	SetRight(Pair)
 	Right() Pair
 	Level() int
+	Add(other Pair) Pair
+	IncLevel()
+	String() string
 }
 
 type Number struct {
-	Value int
-	level int
+	Value    int
+	IntLevel int
 }
 
 var _ Pair = &Number{}
 
 func NewNumber(value, level int) *Number {
 	return &Number{
-		Value: value,
-		level: level,
+		Value:    value,
+		IntLevel: level,
 	}
 }
 
-func (n Number) SetLeft(pair Pair) {}
+func (n *Number) String() string {
+	return fmt.Sprint(n.Value)
+}
 
-func (n Number) Left() Pair {
+func (n *Number) SetLeft(_ Pair) {}
+
+func (n *Number) Left() Pair {
 	return nil
 }
 
-func (n Number) SetRight(pair Pair) {}
+func (n *Number) SetRight(_ Pair) {}
 
-func (n Number) Right() Pair {
+func (n *Number) Right() Pair {
 	return nil
 }
 
-func (n Number) Level() int {
-	return n.level
+func (n *Number) Level() int {
+	return n.IntLevel
+}
+
+func (n *Number) IncLevel() {
+	n.IntLevel += 1
+}
+
+func (n *Number) Add(_ Pair) Pair {
+	panic("can't add number")
 }
 
 type ComplexPair struct {
-	left  Pair
-	right Pair
-	level int
+	IntLeft  Pair
+	IntRight Pair
+}
+
+func (c *ComplexPair) IncLevel() {
+	c.IntLeft.IncLevel()
+	c.IntRight.IncLevel()
+}
+
+func (c *ComplexPair) Add(other Pair) Pair {
+	pair := &ComplexPair{
+		IntLeft:  c,
+		IntRight: other,
+	}
+
+	pair.IncLevel()
+
+	return pair
 }
 
 func (c *ComplexPair) SetLeft(pair Pair) {
-	c.left = pair
+	c.IntLeft = pair
 }
 
 func (c *ComplexPair) Left() Pair {
-	return c.left
+	return c.IntLeft
 }
 
 func (c *ComplexPair) SetRight(pair Pair) {
-	c.right = pair
+	c.IntRight = pair
 }
 
 func (c *ComplexPair) Right() Pair {
-	return c.right
+	return c.IntRight
 }
 
 func (c *ComplexPair) Level() int {
-	return c.level
+	return -1
+}
+
+func (c *ComplexPair) String() string {
+	return fmt.Sprintf("[%s,%s]", c.Left().String(), c.Right().String())
+}
+
+func (c *ComplexPair) Reduce() {
+	// find left most value that is >= level 4
+	// dfs left
+	// defs right
 }
 
 var _ Pair = &ComplexPair{}
 
-func CreatePair(input string) (Pair, error) {
+func CreatePair(input string) (*ComplexPair, error) {
 	l := &lexer{
 		input: input,
 		pos:   0,
@@ -126,7 +166,7 @@ func (l *lexer) slurpNumber() int {
 	return support.ParseInt(sb.String())
 }
 
-func lexerStart(l *lexer, level int) (Pair, error) {
+func lexerStart(l *lexer, level int) (*ComplexPair, error) {
 	level += 1
 
 	if l.token() != '[' {
